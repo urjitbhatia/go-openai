@@ -85,6 +85,7 @@ func (c *Client) CreateAssistant(ctx context.Context, request AssistantRequest) 
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &response)
 	return
 }
@@ -100,6 +101,7 @@ func (c *Client) RetrieveAssistant(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &response)
 	return
 }
@@ -116,6 +118,7 @@ func (c *Client) ModifyAssistant(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &response)
 	return
 }
@@ -131,6 +134,7 @@ func (c *Client) DeleteAssistant(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &response)
 	return
 }
@@ -168,6 +172,7 @@ func (c *Client) ListAssistants(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &reponse)
 	return
 }
@@ -185,6 +190,7 @@ func (c *Client) CreateAssistantFile(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &response)
 	return
 }
@@ -201,6 +207,7 @@ func (c *Client) RetrieveAssistantFile(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &response)
 	return
 }
@@ -217,6 +224,7 @@ func (c *Client) DeleteAssistantFile(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, nil)
 	return
 }
@@ -255,6 +263,11 @@ func (c *Client) ListAssistantFiles(
 		return
 	}
 
+	setAssistantBetaHeaders(req)
 	err = c.sendRequest(req, &response)
 	return
+}
+
+func setAssistantBetaHeaders(req *http.Request) {
+	req.Header.Set("OpenAI-Beta", "assistants=v1")
 }

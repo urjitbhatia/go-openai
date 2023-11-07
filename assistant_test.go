@@ -31,6 +31,9 @@ When asked a question, write and run Python code to answer the question.`
 	server.RegisterHandler(
 		"/v1/assistants/"+assistantID+"/files/"+assistantFileID,
 		func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("OpenAI-Beta") != "assistants=v1" {
+				t.Fatalf("OpenAI-Beta header is required for assistant calls, it was not set")
+			}
 			if r.Method == http.MethodGet {
 				resBytes, _ := json.Marshal(openai.AssistantFile{
 					ID:          assistantFileID,
@@ -52,6 +55,9 @@ When asked a question, write and run Python code to answer the question.`
 	server.RegisterHandler(
 		"/v1/assistants/"+assistantID+"/files",
 		func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("OpenAI-Beta") != "assistants=v1" {
+				t.Fatalf("OpenAI-Beta header is required for assistant calls, it was not set")
+			}
 			if r.Method == http.MethodGet {
 				resBytes, _ := json.Marshal(openai.AssistantFilesList{
 					AssistantFiles: []openai.AssistantFile{
@@ -83,6 +89,9 @@ When asked a question, write and run Python code to answer the question.`
 	server.RegisterHandler(
 		"/v1/assistants/"+assistantID,
 		func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("OpenAI-Beta") != "assistants=v1" {
+				t.Fatalf("OpenAI-Beta header is required for assistant calls, it was not set")
+			}
 			switch r.Method {
 			case http.MethodGet:
 				resBytes, _ := json.Marshal(openai.Assistant{
@@ -124,6 +133,9 @@ When asked a question, write and run Python code to answer the question.`
 	server.RegisterHandler(
 		"/v1/assistants",
 		func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("OpenAI-Beta") != "assistants=v1" {
+				t.Fatalf("OpenAI-Beta header is required for assistant calls, it was not set")
+			}
 			if r.Method == http.MethodPost {
 				var request openai.AssistantRequest
 				err := json.NewDecoder(r.Body).Decode(&request)
