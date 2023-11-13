@@ -10,51 +10,56 @@ import (
 const (
 	assistantsSuffix      = "/assistants"
 	assistantsFilesSuffix = "/files"
+	openaiAssistantsV1    = "assistants=v1"
 )
 
 type Assistant struct {
-	ID           string  `json:"id"`
-	Object       string  `json:"object"`
-	CreatedAt    int64   `json:"created_at"`
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	Model        string  `json:"model"`
-	Instructions *string `json:"instructions,omitempty"`
-	Tools        []any   `json:"tools,omitempty"`
+	ID           string          `json:"id"`
+	Object       string          `json:"object"`
+	CreatedAt    int64           `json:"created_at"`
+	Name         *string         `json:"name,omitempty"`
+	Description  *string         `json:"description,omitempty"`
+	Model        string          `json:"model"`
+	Instructions *string         `json:"instructions,omitempty"`
+	Tools        []AssistantTool `json:"tools,omitempty"`
 
 	httpHeader
 }
 
+type AssistantToolType string
+
+const (
+	AssistantToolTypeCodeInterpreter AssistantToolType = "code_interpreter"
+	AssistantToolTypeRetrieval       AssistantToolType = "retrieval"
+	AssistantToolTypeFunction        AssistantToolType = "function"
+)
+
 type AssistantTool struct {
-	Type string `json:"type"`
-}
-
-type AssistantToolCodeInterpreter struct {
-	AssistantTool
-}
-
-type AssistantToolRetrieval struct {
-	AssistantTool
-}
-
-type AssistantToolFunction struct {
-	AssistantTool
-	Function FunctionDefinition `json:"function"`
+	Type     AssistantToolType   `json:"type"`
+	Function *FunctionDefinition `json:"function,omitempty"`
 }
 
 type AssistantRequest struct {
-	Model        string         `json:"model"`
-	Name         *string        `json:"name,omitempty"`
-	Description  *string        `json:"description,omitempty"`
-	Instructions *string        `json:"instructions,omitempty"`
-	Tools        []any          `json:"tools,omitempty"`
-	FileIDs      []string       `json:"file_ids,omitempty"`
-	Metadata     map[string]any `json:"metadata,omitempty"`
+	Model        string          `json:"model"`
+	Name         *string         `json:"name,omitempty"`
+	Description  *string         `json:"description,omitempty"`
+	Instructions *string         `json:"instructions,omitempty"`
+	Tools        []AssistantTool `json:"tools,omitempty"`
+	FileIDs      []string        `json:"file_ids,omitempty"`
+	Metadata     map[string]any  `json:"metadata,omitempty"`
 }
 
 // AssistantsList is a list of assistants.
 type AssistantsList struct {
 	Assistants []Assistant `json:"data"`
+
+	httpHeader
+}
+
+type AssistantDeleteResponse struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Deleted bool   `json:"deleted"`
 
 	httpHeader
 }
@@ -80,7 +85,8 @@ type AssistantFilesList struct {
 
 // CreateAssistant creates a new assistant.
 func (c *Client) CreateAssistant(ctx context.Context, request AssistantRequest) (response Assistant, err error) {
-	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL(assistantsSuffix), withBody(request))
+	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL(assistantsSuffix), withBody(request),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -96,7 +102,8 @@ func (c *Client) RetrieveAssistant(
 	assistantID string,
 ) (response Assistant, err error) {
 	urlSuffix := fmt.Sprintf("%s/%s", assistantsSuffix, assistantID)
-	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix))
+	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -113,7 +120,8 @@ func (c *Client) ModifyAssistant(
 	request AssistantRequest,
 ) (response Assistant, err error) {
 	urlSuffix := fmt.Sprintf("%s/%s", assistantsSuffix, assistantID)
-	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL(urlSuffix), withBody(request))
+	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL(urlSuffix), withBody(request),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -127,9 +135,10 @@ func (c *Client) ModifyAssistant(
 func (c *Client) DeleteAssistant(
 	ctx context.Context,
 	assistantID string,
-) (response Assistant, err error) {
+) (response AssistantDeleteResponse, err error) {
 	urlSuffix := fmt.Sprintf("%s/%s", assistantsSuffix, assistantID)
-	req, err := c.newRequest(ctx, http.MethodDelete, c.fullURL(urlSuffix))
+	req, err := c.newRequest(ctx, http.MethodDelete, c.fullURL(urlSuffix),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -167,7 +176,8 @@ func (c *Client) ListAssistants(
 	}
 
 	urlSuffix := fmt.Sprintf("%s%s", assistantsSuffix, encodedValues)
-	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix))
+	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -185,7 +195,8 @@ func (c *Client) CreateAssistantFile(
 ) (response AssistantFile, err error) {
 	urlSuffix := fmt.Sprintf("%s/%s%s", assistantsSuffix, assistantID, assistantsFilesSuffix)
 	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL(urlSuffix),
-		withBody(request))
+		withBody(request),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -202,7 +213,8 @@ func (c *Client) RetrieveAssistantFile(
 	fileID string,
 ) (response AssistantFile, err error) {
 	urlSuffix := fmt.Sprintf("%s/%s%s/%s", assistantsSuffix, assistantID, assistantsFilesSuffix, fileID)
-	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix))
+	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -219,7 +231,8 @@ func (c *Client) DeleteAssistantFile(
 	fileID string,
 ) (err error) {
 	urlSuffix := fmt.Sprintf("%s/%s%s/%s", assistantsSuffix, assistantID, assistantsFilesSuffix, fileID)
-	req, err := c.newRequest(ctx, http.MethodDelete, c.fullURL(urlSuffix))
+	req, err := c.newRequest(ctx, http.MethodDelete, c.fullURL(urlSuffix),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
@@ -258,7 +271,8 @@ func (c *Client) ListAssistantFiles(
 	}
 
 	urlSuffix := fmt.Sprintf("%s/%s%s%s", assistantsSuffix, assistantID, assistantsFilesSuffix, encodedValues)
-	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix))
+	req, err := c.newRequest(ctx, http.MethodGet, c.fullURL(urlSuffix),
+		withBetaAssistantV1())
 	if err != nil {
 		return
 	}
